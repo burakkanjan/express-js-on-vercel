@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MKO İtiraf</title>
+    <style>
+        body { margin:0; font-family:Arial; background:#e5ddd5; }
+        #app { max-width:450px; margin:auto; height:100vh; display:flex; flex-direction:column; background:white; position:relative; }
+        #header { background:#128c7e; color:white; padding:15px; font-size:20px; text-align:center; }
+        #adminBtn { position:absolute; right:15px; top:15px; cursor:pointer; font-size:14px; }
+        .page { padding:20px; display:none; }
+        button, select, input { width:100%; padding:12px; margin-top:10px; border-radius:10px; border:1px solid #ccc; }
+        #messages { flex:1; overflow-y:auto; padding:10px; background:#efeae2; display:none; }
+        #inputBox { display:none; padding:10px; background:#f0f0f0; }
+        .msg { background:#dcf8c6; padding:10px; border-radius:10px; margin-bottom:10px; }
+        .username { font-weight:bold; margin-bottom:5px; }
+        .actions { display:flex; gap:10px; font-size:14px; margin-top:5px; }
+        .replyBox { margin-left:20px; background:white; padding:5px; border-radius:7px; margin-top:5px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="header">MKO İtiraf <span id="adminBtn" onclick="openAdminLogin()">Şifreli Giriş</span></div>
+
+    <!-- ANA SAYFA -->
+    <div id="home" class="page" style="display:block;">
+        <h3>Kullanıcı Adı</h3>
+        <input id="usernameInput" placeholder="kırmızı">
+
+        <button onclick="openGeneral()">GENEL</button>
+        <button onclick="openClass(5)">5. SINIF</button>
+        <button onclick="openClass(6)">6. SINIF</button>
+        <button onclick="openClass(7)">7. SINIF</button>
+        <button onclick="openClass(8)">8. SINIF</button>
+    </div>
+
+    <!-- ŞUBE SEÇME -->
+    <div id="branchPage" class="page">
+        <h3>Şube Seç</h3>
+        <div id="branches"></div>
+        <button onclick="goHome()">Geri</button>
+    </div>
+
+    <!-- MESAJ ALANI -->
+    <div id="messages"></div>
+    <div id="inputBox">
+        <input id="text" placeholder="İtiraf yaz...">
+        <button onclick="sendMsg()">Gönder</button>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none; padding:20px;">
+    <h2>Yönetici Paneli</h2>
+    <div id="adminSections"></div>
+    <button onclick="closeAdmin()">Kapat</button>
+</div>
+
+<script>
+let messages = { general: [], classes:{} };
+let username = "";
+let currentKey = "";
+
+function goHome(){ showPage('home'); }
+function showPage(p){ document.querySelectorAll('.page').forEach(x=>x.style.display='none'); if(p) document.getElementById(p).style.display='block'; }
+function openGeneral(){ usernameCheck(); currentKey='general'; openChat(); }
+function openClass(n){ usernameCheck(); let box=document.getElementById('branches'); box.innerHTML=""; for(let i=65;i<=71;i++){ let s=n+String.fromCharCode(i); let b=document.createElement('button'); b.innerText=s; b.onclick=()=>{currentKey=s; if(!messages.classes[s]) messages.classes[s]=[]; openChat();}; box.appendChild(b);} showPage('branchPage'); }
+function usernameCheck(){ username=document.getElementById('usernameInput').value; if(!username) alert('Kullanıcı adı gir!'); }
+function openChat(){ showPage(null); document.getElementById('messages').style.display='block'; document.getElementById('inputBox').style.display='flex'; render(); }
+
+function sendMsg(){ let t=document.getElementById('text').value; if(!t) return; let m={user:username, text:t, likes:[], replies:[]}; if(currentKey==='general') messages.general.push(m); else messages.classes[currentKey].push(m); document.getElementById('text').value=""; render(); }
+function likeMsg(i){ let arr=getArr(); if(!arr[i].likes.includes(username)) arr[i].likes.push(username); render(); }
+function replyMsg(i){ let arr=getArr(); let r=prompt("Yanıt yaz:"); if(r) arr[i].replies.push({user:username,text:r}); render(); }
+function getArr(){ return currentKey==='general'?messages.general:messages.classes[currentKey]; }
+function render(){ let box=document.getElementById('messages'); box.innerHTML=""; let arr=getArr(); arr.forEach((m,i)=>{ let d=document.createElement('div'); d.className='msg'; d.innerHTML=`<div class='username'>${m.user}</div>${m.text}<div class='actions'><span onclick='likeMsg(${i})'>👍 ${m.likes.length}</span><span onclick='replyMsg(${i})'>💬 Yanıtla</span></div>`; m.replies.forEach(r=>{ let rb=document.createElement('div'); rb.className='replyBox'; rb.innerText=`${r.user}: ${r.text}`; d.appendChild(rb); }); box.appendChild(d); }); }
+
+// ADMIN
+function openAdminLogin(){ let p=prompt('Şifre:'); if(p==='3589') openAdmin(); else alert('Hatalı şifre!'); }
+function openAdmin(){ document.getElementById('app').style.display='none'; let panel=document.getElementById('adminPanel'); panel.style.display='block'; renderAdmin(); }
+function renderAdmin(){ let sec=document.getElementById('adminSections'); sec.innerHTML="";
+    function add(name,arr){ let h=document.createElement('h3'); h.innerText=name; sec.appendChild(h);
+        arr.forEach((m,i)=>{ let d=document.createElement('div'); d.style.background='#eee'; d.style.padding='10px'; d.style.margin='5px'; d.innerHTML=`<b>${m.user}</b>: ${m.text}`; let del=document.createElement('button'); del.innerText='Sil'; del.onclick=()=>{arr.splice(i,1); renderAdmin();}; d.appendChild(del); sec.appendChild(d); }); }
+    add('GENEL',messages.general);
+    for(let c in messages.classes){ add(c,messages.classes[c]); }
+}
+function closeAdmin(){ document.getElementById('adminPanel').style.display='none'; document.getElementById('app').style.display='flex'; }
+</script>
+</body>
+</html>
